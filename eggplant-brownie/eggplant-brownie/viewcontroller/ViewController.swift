@@ -8,11 +8,16 @@
 
 import UIKit
 
+
+//É delegado a essa classe a função de adicionar um item
+// Para que seja adicionada uma refeição a mesma delega a MealsTabel.
 class ViewController: UIViewController, UITableViewDataSource ,UITableViewDelegate, AddAnItemDelegate {
     
     @IBOutlet var nameField : UITextField?
     @IBOutlet var happinessField : UITextField?
-    var delegate: AddAMealDelegate?
+    
+    var delegate: AddAMealDelegate? // delega determinada função a
+                                    //uma outra classe
     var selected = Array<Item>()
     
     var items = [
@@ -27,10 +32,19 @@ class ViewController: UIViewController, UITableViewDataSource ,UITableViewDelega
     
     @IBOutlet var tableView : UITableView?
     
+    //adiciona um item
     func add(_ item:Item){
         items.append(item)
+        
+        // o '?' significa: se é nulo então não faz nada;
+        //caso contrário, executa o .reloadData().
+        //optional chaning: cadeia de chamadas à opcionais
+        //tableView?.reloadData()
+        
         if let table = tableView{
             table.reloadData()
+        } else{
+            Alert(controller:self).show(message:"Unable to update items table")
         }
     }
     
@@ -39,10 +53,13 @@ class ViewController: UIViewController, UITableViewDataSource ,UITableViewDelega
         navigationItem.rightBarButtonItem = newItemButton
     }
     
-    func showNewItem(){
+    @objc func showNewItem(){
         let newItem = NewItemViewController(delegate: self)
         if let navigation = navigationController{
+            //adiciona a próxima visão(view) a pilha
             navigation.pushViewController(newItem, animated: true)
+        }else{
+            Alert(controller:self).show()
         }
     }
     
@@ -58,7 +75,10 @@ class ViewController: UIViewController, UITableViewDataSource ,UITableViewDelega
                 if let position = selected.index(of: item){
                     selected.remove(at: position)
                 }
+                Alert(controller:self).show()
             }
+        } else{
+            Alert(controller:self).show()
         }
     }
     
@@ -76,30 +96,62 @@ class ViewController: UIViewController, UITableViewDataSource ,UITableViewDelega
     
     //! significa que é opcional
     
-    @IBAction func add(){
-        
-        if(nameField == nil || happinessField == nil){
-            return
+    func convertToInt(_ text:String?) -> Int?{
+        if let number = text{
+            return Int(number)
         }
+        return nil
+    }
+    
+    func getMealFromForm() -> Meal?{
         
-        let name:String = nameField!.text!
-        if let happiness = Int(happinessField!.text!){
-            
-            let meal = Meal(name: name, happiness: happiness, items: selected)
-            
-            print("eaten \(String(describing: name)) brownie with happiness \(happiness) with items \(meal.items) !")
-            
-            if (delegate == nil) {
+        // sempre que usar '?', buscar utiliza-lo dentro do "if"
+        if let name = nameField?.text{
+            if let happiness = convertToInt(happinessField?.text){
+                    let meal = Meal(name: name, happiness: happiness, items: selected)
+        
+                    print("eaten \(String(describing: name)) brownie with happiness \(happiness) with items \(meal.items) !")
+        
+                    return meal
+                
+            }
+        }
+        //Código anterior a otimização:
+        //        if(nameField == nil || happinessField == nil){
+        //            return nil
+        //        }
+        //
+        //        let name:String = nameField!.text!
+        //        if let happiness = Int(happinessField!.text!){
+        //
+        //            let meal = Meal(name: name, happiness: happiness, items: selected)
+        //
+        //            print("eaten \(String(describing: name)) brownie with happiness \(happiness) with items \(meal.items) !")
+        //
+        //            return meal
+        //        }
+        
+        return nil
+    }
+    
+    
+    @IBAction func add(){
+        // adiciona uma refeição
+        let meal = getMealFromForm()
+        
+        if let m = meal{
+            if let meals = delegate{
+                meals.add(m)
+                if let navigation = navigationController{
+                    navigation.popViewController(animated: true)
+                }
+                else{
+                    Alert(controller:self).show(message:"Unable to go back, but the mael was added")
+                }
                 return
             }
-            
-            delegate!.add(meal)
-            
-            if let navigation = navigationController{
-                    navigation.popViewController(animated: true)
-            }
-            
         }
+        Alert(controller:self).show()
         
     }
 }

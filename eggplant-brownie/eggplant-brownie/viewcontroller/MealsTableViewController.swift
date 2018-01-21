@@ -14,13 +14,23 @@ class MealsTableViewController : UITableViewController, AddAMealDelegate{
     
     func add(_ meal: Meal){
         meals.append(meal)
+        // salva o objeto no diretório selecionado
+        Dao().saveMeals(meals: meals)
         tableView.reloadData()
+        
+    }
+    
+    override func viewDidLoad() {
+        
+        self.meals = Dao().loadMeals()
     }
     
     // ...(_ ...) o "_" significa que o prarametro não possui nome
     // pode-se também dar um nome externo e um interno para o parâmetro. ex:
     // prepara(for segue: ...) , onde "for"é nome externo e "segue"é nome interno.
     
+    //Passa a si mesmo como classe delegada para que seja possível adicionar uma refeição
+    //uso de mudanças de tela de forma programática
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if(segue.identifier == "addMeal"){
             let view = segue.destination as! ViewController
@@ -50,7 +60,9 @@ class MealsTableViewController : UITableViewController, AddAMealDelegate{
     }
     
     
-    func showDetails(recognizer: UILongPressGestureRecognizer){
+    //Gerando uma pquena mensagem de detalhes ao clicar sobre uma refeirção
+    // Através da menssagem gerada é possível também excluir a refeição.
+    @objc func showDetails(recognizer: UILongPressGestureRecognizer){
         if(recognizer.state == UIGestureRecognizerState.began){
             let cell = recognizer.view as! UITableViewCell
             
@@ -58,13 +70,10 @@ class MealsTableViewController : UITableViewController, AddAMealDelegate{
                 let row = indexPath.row
                 let meal = meals[row]
                 
-                let details = UIAlertController(title: meal.name, message: meal.details(), preferredStyle: UIAlertControllerStyle.alert)
                 
-                let ok = UIAlertAction(title: "OK", style: UIAlertActionStyle.cancel, handler: nil)
-                
-                details.addAction(ok)
-                
-                present(details, animated: true, completion: nil)
+                RemoveMealController.init(controller: self).show(meal, handler:{action in
+                    self.meals.remove(at: row)
+                    self.tableView.reloadData()})
                 
             }
             
@@ -72,4 +81,7 @@ class MealsTableViewController : UITableViewController, AddAMealDelegate{
             print("Long presure")
         }
     }
+    
+    
+    
 }
